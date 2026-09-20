@@ -14,6 +14,7 @@
     <DebugType>embedded</DebugType>
     <InvariantGlobalization>true</InvariantGlobalization>
     <Version>0.1.0</Version>
+    <ApplicationIcon>Runtime\Resources\jprime.ico</ApplicationIcon>
     <Company>JPrime Fitness PH</Company>
     <Product>JPrime Control Panel</Product>
     <AssemblyTitle>JPrime Control Panel</AssemblyTitle>

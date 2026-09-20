@@ -36,6 +36,7 @@ public sealed class SettingsForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         StartPosition = FormStartPosition.CenterParent;
+        Icon = AppIcon.Main;
 
         var grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Padding = new Padding(14), AutoScroll = true };
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 230));

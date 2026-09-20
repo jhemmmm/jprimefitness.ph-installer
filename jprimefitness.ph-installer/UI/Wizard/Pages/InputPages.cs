@@ -362,6 +362,7 @@ public sealed class TunnelPage : WizardPage
         stack.Controls.Add(Note("""
             Open https://one.dash.cloudflare.com → Networks → Tunnels → Create a tunnel → choose Cloudflared → name it (e.g. jprime-gym-pc) → Save tunnel.
             On the "Install and run a connector" screen pick Windows. The command shown ends with a very long value starting with eyJ. That is the token. Paste it below (pasting the whole command also works).
+            Create a NEW tunnel for this PC. Do not reuse the live server's tunnel token: all connectors of one tunnel share its routes and Cloudflare splits the traffic between them, so the live website would start failing.
             """));
         var g = FormGrid();
         AddRow(g, "Tunnel token", _token, "Stored encrypted on this PC and never written to .env.");

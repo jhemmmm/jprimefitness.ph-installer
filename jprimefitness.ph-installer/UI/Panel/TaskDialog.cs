@@ -16,6 +16,7 @@ public sealed class TaskDialog : Form
         Width = 760;
         Height = 480;
         StartPosition = FormStartPosition.CenterParent;
+        Icon = AppIcon.Main;
         MinimizeBox = false;
         _log = new TextBox
         {

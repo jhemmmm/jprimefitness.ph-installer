@@ -33,7 +33,7 @@ public sealed class WizardForm : Form
         Height = 740;
         MinimumSize = new Size(900, 660);
         StartPosition = FormStartPosition.CenterScreen;
-        Icon = SystemIcons.Application;
+        Icon = AppIcon.Main;
 
         var header = new System.Windows.Forms.Panel { Dock = DockStyle.Top, Height = 64, BackColor = Color.White, Padding = new Padding(24, 10, 24, 0) };
         _title = new Label { AutoSize = false, Dock = DockStyle.Top, Height = 30, Font = new Font("Segoe UI", 14, FontStyle.Bold) };

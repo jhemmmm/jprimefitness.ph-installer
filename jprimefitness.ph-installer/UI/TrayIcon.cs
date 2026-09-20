@@ -88,11 +88,14 @@ public sealed class TrayIcon : IDisposable
         using (var g = Graphics.FromImage(bmp))
         {
             g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
             g.Clear(Color.Transparent);
-            using var bg = new SolidBrush(Color.FromArgb(36, 41, 51));
-            g.FillEllipse(bg, 1, 1, 30, 30);
+            using (var logo = AppIcon.Bitmap(32)) g.DrawImage(logo, 0, 0, 32, 32);
+            // Status dot bottom-right, white ring so it reads on the red logo and on light/dark taskbars.
+            using var ring = new SolidBrush(Color.White);
+            g.FillEllipse(ring, 17, 17, 15, 15);
             using var dot = new SolidBrush(color);
-            g.FillEllipse(dot, 8, 8, 16, 16);
+            g.FillEllipse(dot, 19, 19, 11, 11);
         }
         var handle = bmp.GetHicon();
         var icon = (Icon)Icon.FromHandle(handle).Clone();

@@ -24,7 +24,7 @@ public sealed class MainForm : Form
         Height = 720;
         MinimumSize = new Size(960, 520);
         StartPosition = FormStartPosition.CenterScreen;
-        Icon = SystemIcons.Application;
+        Icon = AppIcon.Main;
 
         var tools = new ToolStrip { GripStyle = ToolStripGripStyle.Hidden, Padding = new Padding(6, 2, 6, 2) };
         tools.Items.Add(new ToolStripButton("Start all", null, (_, _) => _ = _app.StartAllAsync()) { DisplayStyle = ToolStripItemDisplayStyle.Text });

@@ -19,6 +19,7 @@ public sealed class ArtisanConsoleForm : Form
         Width = 860;
         Height = 560;
         StartPosition = FormStartPosition.CenterParent;
+        Icon = AppIcon.Main;
 
         var top = new TableLayoutPanel { Dock = DockStyle.Top, Height = 38, ColumnCount = 3, Padding = new Padding(8, 6, 8, 0) };
         top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));

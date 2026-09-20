@@ -28,7 +28,7 @@ public static class Tools
             case "cloudflared":
                 {
                     var token = PromptDialog.Show(owner, "Cloudflare Tunnel token",
-                        "Paste the tunnel token from Cloudflare Zero Trust (Networks > Tunnels > your tunnel > Install connector).\nLeave empty to keep the current token.",
+                        "Paste the tunnel token from Cloudflare Zero Trust (Networks > Tunnels > your tunnel > Install connector).\nUse a tunnel created for this PC only: reusing the live server's tunnel splits its traffic onto this PC.\nLeave empty to keep the current token.",
                         password: true);
                     if (!string.IsNullOrWhiteSpace(token))
                     {

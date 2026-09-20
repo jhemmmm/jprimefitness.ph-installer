@@ -1,0 +1,73 @@
+name: Release JPrimePanel.exe
+
+# Builds the single-file, self-contained JPrimePanel.exe and attaches it to the GitHub
+# release for v* tags. A manual run uploads the exe as a workflow artifact instead.
+# The version baked into the exe (shown in the panel status bar) comes from the tag.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Publish win-x64
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Resolve version
+        id: ver
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_EVENT_NAME -eq 'push') { $version = $env:GITHUB_REF_NAME.TrimStart('v') }
+          else { $version = "0.0.0-$($env:GITHUB_SHA.Substring(0, 7))" }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "Building version $version"
+
+      - name: Publish
+        shell: pwsh
+        run: |
+          dotnet publish jprimefitness.ph-installer/jprimefitness.ph-installer.csproj `
+            -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:Version=${{ steps.ver.outputs.version }} `
+            -o dist
+          Get-ChildItem dist
+
+      - name: Checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash dist/JPrimePanel.exe -Algorithm SHA256).Hash.ToLower()
+          "$hash  JPrimePanel.exe" | Set-Content dist/JPrimePanel.exe.sha256 -Encoding ascii
+          Get-Content dist/JPrimePanel.exe.sha256
+
+      - name: Publish release assets
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: JPrime Panel ${{ github.ref_name }}
+          files: |
+            dist/JPrimePanel.exe
+            dist/JPrimePanel.exe.sha256
+
+      - name: Upload workflow artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: JPrimePanel-${{ steps.ver.outputs.version }}
+          path: |
+            dist/JPrimePanel.exe
+            dist/JPrimePanel.exe.sha256
+          if-no-files-found: error

@@ -24,6 +24,7 @@ public sealed class UpdateForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         StartPosition = FormStartPosition.CenterParent;
+        Icon = AppIcon.Main;
 
         var current = string.IsNullOrEmpty(ctx.Config.Versions.App) ? "(unknown)" : ctx.Config.Versions.App;
         var info = new Label { Text = $"Installed version: {current}", Left = 14, Top = 14, Width = 520, AutoSize = true };

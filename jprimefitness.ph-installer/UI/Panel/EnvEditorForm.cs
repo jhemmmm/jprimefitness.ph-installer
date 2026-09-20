@@ -30,6 +30,7 @@ public sealed class EnvEditorForm : Form
         Width = 820;
         Height = 640;
         StartPosition = FormStartPosition.CenterParent;
+        Icon = AppIcon.Main;
 
         _grid = new DataGridView
         {

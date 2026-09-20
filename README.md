@@ -22,8 +22,19 @@ Services supervised (each in its own Windows job object, so nothing outlives the
 ## Build
 
 ```powershell
-.\publish.ps1          # -> dist\JPrimePanel.exe (single file, self-contained win-x64)
+.\publish.ps1                  # -> dist\JPrimePanel.exe (single file, self-contained win-x64)
+.\publish.ps1 -Version 1.2.3   # same, with the version stamped into the exe
 ```
+
+## Release
+
+```powershell
+.elease.ps1 -Version 1.2.3   # tags v1.2.3 and pushes it; GitHub Actions builds the exe and attaches it to the release
+```
+
+`.github/workflows/release.yml` runs on every `v*` tag: publishes win-x64, writes `JPrimePanel.exe.sha256`, and creates the
+GitHub release with both files. `-Local` builds here and uploads with the `gh` CLI instead of waiting for CI. The exe version
+(panel status bar, `config\panel.json` → `Versions.Panel`) is taken from the tag.
 
 ## Developer switches (hidden)
 
@@ -34,6 +45,8 @@ JPrimePanel.exe --dev-install <root> [--payloads <dir>] [--with-hikvision <devic
                                                      headless InstallEngine run from cached payloads
 JPrimePanel.exe --dev-provision <root>               write configs + bootstrap DB for an already-extracted tree
 JPrimePanel.exe --dev-smoke <root> [holdSeconds]     headless start/probe/kill/backup/stop checks
+JPrimePanel.exe --dev-update <root> <bundle.zip>     apply an app bundle like the Update dialog, headless
+JPrimePanel.exe --dev-screenshots <dir> [--install-root <root>]   render every wizard page + panel to PNG (JPRIME_SHOT_SIZE=min|WxH)
 JPrimePanel.exe --admin-task <name> [args]           elevated helper mode (used internally via UAC)
 ```
 
