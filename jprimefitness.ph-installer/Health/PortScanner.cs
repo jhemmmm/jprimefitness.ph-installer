@@ -10,12 +10,12 @@ public sealed record PortOwner(int Pid, string ProcessName, string? Hint);
 /// <summary>Free-port checks and "who is listening on this port" via GetExtendedTcpTable.</summary>
 public static class PortScanner
 {
-    /// <summary>True when nothing listens on the port (bind test on 0.0.0.0).</summary>
-    public static bool IsFree(int port)
+    /// <summary>True when nothing listens on the port (bind test on 0.0.0.0, or on <paramref name="address"/>).</summary>
+    public static bool IsFree(int port, IPAddress? address = null)
     {
         try
         {
-            var listener = new TcpListener(IPAddress.Any, port);
+            var listener = new TcpListener(address ?? IPAddress.Any, port);
             listener.Start();
             listener.Stop();
             return true;

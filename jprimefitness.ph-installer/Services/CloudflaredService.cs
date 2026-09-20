@@ -9,8 +9,13 @@ namespace JPrime.Panel.Services;
 /// The token comes from the DPAPI secret store and is passed via the TUNNEL_TOKEN environment variable.</summary>
 public sealed class CloudflaredService : SupervisedService
 {
+    /// <summary>Loopback port for cloudflared's metrics endpoint (/ready). Chosen at each start: the preferred port is
+    /// often taken by another cloudflared (a WSL instance's relay, for example), and cloudflared refuses to start then.</summary>
+    private int _metricsPort;
+
     public CloudflaredService(AppServices ctx) : base("cloudflared", "Cloudflare Tunnel", ctx)
     {
+        _metricsPort = ctx.Config.Tunnel.MetricsPort;
     }
 
     public override string PortLabel => Ctx.Config.Tunnel.PublicHostname;
@@ -30,7 +35,7 @@ public sealed class CloudflaredService : SupervisedService
         Describe = exit => exit.Uptime < TimeSpan.FromSeconds(5) ? "cloudflared exited immediately (invalid token or no network?)" : null,
     };
 
-    protected override IHealthProbe Probe => new HttpProbe(Ctx.Http, $"http://127.0.0.1:{Ctx.Config.Tunnel.MetricsPort}/ready", (status, _) =>
+    protected override IHealthProbe Probe => new HttpProbe(Ctx.Http, $"http://127.0.0.1:{_metricsPort}/ready", (status, _) =>
         status is >= 200 and < 300 ? HealthResult.Healthy
         : status == 503 ? HealthResult.Degraded("connecting to Cloudflare edge")
         : HealthResult.Degraded($"HTTP {status}"));
@@ -38,15 +43,30 @@ public sealed class CloudflaredService : SupervisedService
     protected override ManagedProcessOptions BuildOptions()
     {
         var token = Ctx.Secrets.Get(SecretStore.TunnelToken) ?? "";
+        _metricsPort = PickMetricsPort();
         return new ManagedProcessOptions
         {
             FileName = Ctx.Paths.CloudflaredExe,
-            Arguments = new[] { "tunnel", "--no-autoupdate", "--metrics", $"127.0.0.1:{Ctx.Config.Tunnel.MetricsPort}", "run" },
+            Arguments = new[] { "tunnel", "--no-autoupdate", "--metrics", $"127.0.0.1:{_metricsPort}", "run" },
             WorkingDirectory = Ctx.Paths.CloudflaredDir,
             Environment = new Dictionary<string, string> { ["TUNNEL_TOKEN"] = token },
             GracefulStop = GracefulStopMode.CtrlC,
             GracefulTimeout = TimeSpan.FromSeconds(5),
         };
+    }
+
+    private int PickMetricsPort()
+    {
+        var preferred = Ctx.Config.Tunnel.MetricsPort;
+        for (var port = preferred; port < preferred + 20; port++)
+        {
+            if (PortScanner.IsFree(port, System.Net.IPAddress.Loopback))
+            {
+                if (port != preferred) Log.Info($"cloudflared metrics port {preferred} is in use ({PortScanner.WhoHolds(preferred)?.ProcessName ?? "unknown"}); using {port}");
+                return port;
+            }
+        }
+        throw new InvalidOperationException($"No free loopback port between {preferred} and {preferred + 19} for cloudflared metrics.");
     }
 
     protected override Task PreflightAsync(CancellationToken ct)
