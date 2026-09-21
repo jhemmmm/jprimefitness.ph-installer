@@ -33,11 +33,18 @@ public sealed class TrayIcon : IDisposable
             Visible = true,
         };
         _icon.DoubleClick += (_, _) => _app.ShowMain();
+        _icon.BalloonTipClicked += (_, _) => _app.ShowMain();
     }
 
     public void SetText(string text)
     {
         _icon.Text = text.Length > 63 ? text[..63] : text;
+    }
+
+    /// <summary>Notification with a click-through to the panel (used for update notices).</summary>
+    public void ShowBalloon(string text, ToolTipIcon kind = ToolTipIcon.Info)
+    {
+        try { _icon.ShowBalloonTip(8000, "JPrime Control Panel", text, kind); } catch { }
     }
 
     public void ShowBalloonOnce(string text)

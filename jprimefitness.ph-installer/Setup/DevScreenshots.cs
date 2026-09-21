@@ -57,7 +57,7 @@ public static class DevScreenshots
                 using (var settings = new SettingsForm(ctx)) { settings.Show(); Application.DoEvents(); Capture(settings, Path.Combine(outDir, "panel-settings.png")); settings.Hide(); }
                 using (var env = new EnvEditorForm(ctx)) { env.Show(); Application.DoEvents(); Capture(env, Path.Combine(outDir, "panel-env.png")); env.Hide(); }
                 using (var art = new ArtisanConsoleForm(ctx)) { art.Show(); Application.DoEvents(); Capture(art, Path.Combine(outDir, "panel-artisan.png")); art.Hide(); }
-                using (var upd = new UpdateForm(ctx)) { upd.Show(); Application.DoEvents(); Capture(upd, Path.Combine(outDir, "panel-update.png")); upd.Hide(); }
+                using (var upd = new UpdatesForm(ctx, app.Updates)) { upd.Show(); Application.DoEvents(); Capture(upd, Path.Combine(outDir, "panel-update.png")); upd.Hide(); }
             }
             ctx.Services.Dispose();
         }

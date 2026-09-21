@@ -68,7 +68,7 @@ public static class DevInstall
             if (s.InstallHelper) s.HelperIsSelfContained = ZipExtractor.ContainsFile(s.Downloaded["hikvision"], "hostfxr.dll");
 
             var progress = new Progress<StepProgress>(p => L($"[{p.Fraction:P0}] {p.Step} {p.Message}"));
-            var engine = new InstallEngine(s, http, progress, L);
+            var engine = new InstallEngine(s, http, progress, L) { SkipRegistration = true };
             engine.RunAsync(CancellationToken.None).GetAwaiter().GetResult();
             L("INSTALL OK");
             return 0;

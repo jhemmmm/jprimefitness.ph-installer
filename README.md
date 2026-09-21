@@ -29,12 +29,24 @@ Services supervised (each in its own Windows job object, so nothing outlives the
 ## Release
 
 ```powershell
-.elease.ps1 -Version 1.2.3   # tags v1.2.3 and pushes it; GitHub Actions builds the exe and attaches it to the release
+.
+elease.ps1 -Version 1.2.3   # tags v1.2.3 and pushes it; GitHub Actions builds the exe and attaches it to the release
 ```
 
 `.github/workflows/release.yml` runs on every `v*` tag: publishes win-x64, writes `JPrimePanel.exe.sha256`, and creates the
 GitHub release with both files. `-Local` builds here and uploads with the `gh` CLI instead of waiting for CI. The exe version
 (panel status bar, `config\panel.json` → `Versions.Panel`) is taken from the tag.
+
+## Updates
+
+The panel's **Updates** button lists the JPrime app, the biometric helper and the panel itself against
+`releases/latest` of their GitHub repositories and installs any of them (the app can also be installed from a local
+bundle zip). Each install stops only the affected services, keeps `.env`, `storagepp`, the database and the helper's
+`appsettings.json`, and rolls back when migrations fail. A panel update swaps `panel\JPrimePanel.exe` (previous copy
+kept as `.old`) and restarts the panel.
+
+Settings → Updates: check GitHub once a day (default on; the tray shows a notice once per new version) and, optionally,
+install everything automatically inside a nightly window while the web app has been idle for 10 minutes.
 
 ## Developer switches (hidden)
 
@@ -45,7 +57,8 @@ JPrimePanel.exe --dev-install <root> [--payloads <dir>] [--with-hikvision <devic
                                                      headless InstallEngine run from cached payloads
 JPrimePanel.exe --dev-provision <root>               write configs + bootstrap DB for an already-extracted tree
 JPrimePanel.exe --dev-smoke <root> [holdSeconds]     headless start/probe/kill/backup/stop checks
-JPrimePanel.exe --dev-update <root> <bundle.zip>     apply an app bundle like the Update dialog, headless
+JPrimePanel.exe --dev-update <root> <bundle.zip|hikvision-*.zip|JPrimePanel.exe|check|install:app|install:helper>
+                                                     apply a local bundle/helper zip/panel exe, run the GitHub check, or download+install one target
 JPrimePanel.exe --dev-screenshots <dir> [--install-root <root>]   render every wizard page + panel to PNG (JPRIME_SHOT_SIZE=min|WxH)
 JPrimePanel.exe --admin-task <name> [args]           elevated helper mode (used internally via UAC)
 ```

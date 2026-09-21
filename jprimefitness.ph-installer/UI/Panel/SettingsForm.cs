@@ -23,6 +23,10 @@ public sealed class SettingsForm : Form
     private readonly NumericUpDown _backupKeep;
     private readonly NumericUpDown _backupHours;
     private readonly CheckBox _hikDebug;
+    private readonly CheckBox _autoCheck;
+    private readonly CheckBox _autoApply;
+    private readonly NumericUpDown _applyFrom;
+    private readonly NumericUpDown _applyTo;
     private readonly TextBox _appName;
 
     public SettingsForm(AppServices ctx)
@@ -31,7 +35,7 @@ public sealed class SettingsForm : Form
         var c = ctx.Config;
         Text = "Settings";
         Width = 600;
-        Height = 640;
+        Height = 760;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
@@ -99,6 +103,16 @@ public sealed class SettingsForm : Form
         _backupKeep = new NumericUpDown { Minimum = 1, Maximum = 365, Value = Math.Clamp(c.Backup.RetentionCount, 1, 365), Width = 90 };
         Row("Keep last (copies)", _backupKeep);
 
+        Section("Updates");
+        _autoCheck = new CheckBox { Text = "Check GitHub for new versions once a day (app, biometric helper, panel)", Checked = c.Updates.AutoCheck, AutoSize = true };
+        Row("", _autoCheck);
+        _autoApply = new CheckBox { Text = "Install updates automatically at night while nobody uses the app", Checked = c.Updates.AutoApply, AutoSize = true };
+        Row("", _autoApply, "Runs inside the window below only when the web app has been idle for 10 minutes. The database is backed up first; the panel restarts itself.");
+        _applyFrom = new NumericUpDown { Minimum = 0, Maximum = 23, Value = Math.Clamp(c.Updates.AutoApplyFromHour, 0, 23), Width = 70 };
+        Row("From (hour, 0-23)", _applyFrom);
+        _applyTo = new NumericUpDown { Minimum = 0, Maximum = 23, Value = Math.Clamp(c.Updates.AutoApplyToHour, 0, 23), Width = 70 };
+        Row("Until (hour, 0-23)", _applyTo);
+
         Section("Biometric helper");
         _hikDebug = new CheckBox { Text = "Verbose helper logging (shows device details in health)", Checked = c.Biometric.Debug, AutoSize = true, Enabled = c.Biometric.Enabled };
         Row("", _hikDebug);
@@ -146,6 +160,10 @@ public sealed class SettingsForm : Form
         c.Backup.Enabled = _backupEnabled.Checked;
         c.Backup.IntervalHours = (int)_backupHours.Value;
         c.Backup.RetentionCount = (int)_backupKeep.Value;
+        c.Updates.AutoCheck = _autoCheck.Checked;
+        c.Updates.AutoApply = _autoApply.Checked;
+        c.Updates.AutoApplyFromHour = (int)_applyFrom.Value;
+        c.Updates.AutoApplyToHour = (int)_applyTo.Value;
         var hikDebugChanged = _hikDebug.Checked != c.Biometric.Debug;
         c.Biometric.Debug = _hikDebug.Checked;
         _ctx.SaveConfig();

@@ -16,6 +16,7 @@ public sealed class PanelConfig
     public TunnelSettings Tunnel { get; set; } = new();
     public BackupSettings Backup { get; set; } = new();
     public UiSettings Ui { get; set; } = new();
+    public UpdateSettings Updates { get; set; } = new();
     public VersionInfo Versions { get; set; } = new();
 
     public sealed class WebSettings
@@ -95,6 +96,21 @@ public sealed class PanelConfig
         public int RetentionCount { get; set; } = 14;
         public int IntervalHours { get; set; } = 24;
         public DateTime? LastRunUtc { get; set; }
+    }
+
+    public sealed class UpdateSettings
+    {
+        /// <summary>Look up GitHub releases/latest for the app, helper and panel once per interval.</summary>
+        public bool AutoCheck { get; set; } = true;
+        public int CheckIntervalHours { get; set; } = 24;
+        /// <summary>Install whatever is available inside the nightly window, only while nobody uses the app.</summary>
+        public bool AutoApply { get; set; }
+        public int AutoApplyFromHour { get; set; } = 2;
+        public int AutoApplyToHour { get; set; } = 5;
+        public int IdleMinutes { get; set; } = 10;
+        public DateTime? LastCheckUtc { get; set; }
+        /// <summary>Versions the tray already announced, so the balloon shows once per new set.</summary>
+        public string NotifiedKey { get; set; } = "";
     }
 
     public sealed class UiSettings

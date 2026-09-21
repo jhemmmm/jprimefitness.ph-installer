@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using JPrime.Panel.Runtime.Updates;
 using JPrime.Panel.UI;
 using JPrime.Panel.UI.Panel;
 using Microsoft.Win32;
@@ -17,12 +18,23 @@ public sealed class PanelAppContext : ApplicationContext
     private readonly System.Threading.Timer _backupTimer;
     private int _backupRunning;
 
+    /// <summary>The running panel, for code that must restart the process (panel self-update).</summary>
+    public static PanelAppContext? Current { get; private set; }
+
+    public AutoUpdateScheduler Updates { get; }
+
     public PanelAppContext(CommandLine cli, SingleInstance instance)
     {
         _cli = cli;
         _instance = instance;
         _ctx = AppServices.Current;
+        Current = this;
         UiThread.Capture();
+        if (_ctx.Config.Versions.Panel != PanelUpdater.InstalledVersion)
+        {
+            _ctx.Config.Versions.Panel = PanelUpdater.InstalledVersion;
+            _ctx.SaveConfig();
+        }
 
         _tray = new TrayIcon(this);
         _instance.ListenForShow(() => UiThread.Post(ShowMain));
@@ -34,6 +46,8 @@ public sealed class PanelAppContext : ApplicationContext
         _ctx.Services.AnyStatusChanged += _ => UiThread.Post(() => _tray.RefreshState(_ctx.Services));
         _ctx.Services.StartPolling();
         _backupTimer = new System.Threading.Timer(_ => BackupTick(), null, TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(10));
+        Updates = new AutoUpdateScheduler(_ctx);
+        Updates.Notice += text => UiThread.Post(() => _tray.ShowBalloon(text));
 
         if (!cli.Autostart)
         {
@@ -180,6 +194,32 @@ public sealed class PanelAppContext : ApplicationContext
         }
     }
 
+    /// <summary>Panel self-update: stop everything, swap the installed exe, launch the new one, exit. The mutex must be
+    /// released on the thread that acquired it (the UI thread), so the tail runs there.</summary>
+    public async Task RestartForUpdateAsync(string newExe, Action<string> log, CancellationToken ct)
+    {
+        if (_exiting) throw new InvalidOperationException("The panel is already shutting down.");
+        _exiting = true;
+        try
+        {
+            log("Stopping all services");
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            cts.CancelAfter(TimeSpan.FromSeconds(60));
+            await _ctx.Services.StopAllAsync(cts.Token).ConfigureAwait(false);
+            var installed = PanelUpdater.Swap(_ctx.Paths, newExe, log);
+            log("Restarting the panel");
+            UiThread.Post(() => Shutdown(relaunch: installed));
+            // The process exits from the UI thread; never report completion to a dialog that is being torn down.
+            await Task.Delay(TimeSpan.FromMinutes(1)).ConfigureAwait(false);
+        }
+        catch
+        {
+            _exiting = false;
+            _ = Task.Run(() => _ctx.Services.StartAllAsync(onlyAutostart: true));
+            throw;
+        }
+    }
+
     private void OnSessionEnding(object sender, SessionEndingEventArgs e)
     {
         // ~5 s budget: best-effort graceful signals, job objects do the rest.
@@ -191,14 +231,26 @@ public sealed class PanelAppContext : ApplicationContext
         catch { }
     }
 
-    private void Shutdown()
+    private void Shutdown(string? relaunch = null)
     {
         SystemEvents.SessionEnding -= OnSessionEnding;
         _backupTimer.Dispose();
+        Updates.Dispose();
         try { _ctx.Services.Dispose(); } catch { }
         _tray.Dispose();
         _main?.Dispose();
         _instance.Release();
+        if (relaunch is not null)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo(relaunch, "--show") { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(relaunch) });
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Could not relaunch the updated panel; start it from the Start Menu", ex);
+            }
+        }
         ExitThread();
     }
 }

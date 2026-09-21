@@ -30,8 +30,8 @@ public static class PayloadCatalog
     public const string PhpPinned = "8.4.25";
     public const string NginxVersion = "1.28.3";
     public const string CloudflaredVersion = "2026.9.1";
-    public const string HikVisionRepo = "jhemmmm/jprimefitness.ph-hikvision";
-    public const string AppRepo = "jhemmmm/jprimefitness.ph";
+    public const string HikVisionRepo = Runtime.Updates.GitHubReleases.HelperRepo;
+    public const string AppRepo = Runtime.Updates.GitHubReleases.AppRepo;
 
     public static Payload Nginx => new("nginx", "nginx web server",
         $"https://nginx.org/download/nginx-{NginxVersion}.zip", $"nginx-{NginxVersion}.zip", PayloadKind.Zip, NginxVersion, StripTopLevel: true);
@@ -84,18 +84,10 @@ public static class PayloadCatalog
 
     public static async Task<Payload> ResolveGitHubLatestAsync(HttpClient http, string repo, string id, string title, Func<string, bool> assetMatch, string fileNamePrefix, CancellationToken ct)
     {
-        var json = await http.GetStringAsync($"https://api.github.com/repos/{repo}/releases/latest", ct).ConfigureAwait(false);
-        using var doc = JsonDocument.Parse(json);
-        var tag = doc.RootElement.GetProperty("tag_name").GetString() ?? "latest";
-        foreach (var asset in doc.RootElement.GetProperty("assets").EnumerateArray())
-        {
-            var name = asset.GetProperty("name").GetString() ?? "";
-            if (!assetMatch(name)) continue;
-            var url = asset.GetProperty("browser_download_url").GetString()!;
-            var size = asset.GetProperty("size").GetInt64();
-            return new Payload(id, $"{title} {tag}", url, $"{fileNamePrefix}-{tag}.zip", PayloadKind.Zip, tag, ExpectedSize: size);
-        }
-        throw new InvalidOperationException($"No matching release asset found in {repo} {tag}.");
+        var rel = await Runtime.Updates.GitHubReleases.LatestAsync(http, repo, assetMatch, ct).ConfigureAwait(false)
+                  ?? throw new InvalidOperationException($"No release with a matching asset found in {repo}.");
+        var sha = await Runtime.Updates.GitHubReleases.ReadSha256Async(http, rel.Sha256Url, ct).ConfigureAwait(false);
+        return new Payload(id, $"{title} {rel.Tag}", rel.AssetUrl, $"{fileNamePrefix}-{rel.Tag}.zip", PayloadKind.Zip, rel.Tag, Sha256: sha, ExpectedSize: rel.Size);
     }
 
     public static Task<Payload> ResolveHikVisionAsync(HttpClient http, CancellationToken ct) =>

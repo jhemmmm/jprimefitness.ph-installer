@@ -13,6 +13,7 @@ public sealed class MainForm : Form
     private readonly LogViewerControl _logs;
     private readonly ToolStripStatusLabel _lanLabel;
     private readonly System.Windows.Forms.Timer _tick;
+    private readonly ToolStripButton _updates;
 
     public MainForm(PanelAppContext app)
     {
@@ -36,7 +37,8 @@ public sealed class MainForm : Form
         tools.Items.Add(lan);
         tools.Items.Add(new ToolStripSeparator());
         tools.Items.Add(new ToolStripButton("Backup now", null, (_, _) => Tools.BackupNow(this)) { DisplayStyle = ToolStripItemDisplayStyle.Text });
-        tools.Items.Add(new ToolStripButton("Update app", null, (_, _) => Tools.UpdateApp(this)) { DisplayStyle = ToolStripItemDisplayStyle.Text });
+        _updates = new ToolStripButton("Updates", null, (_, _) => Tools.Updates(this)) { DisplayStyle = ToolStripItemDisplayStyle.Text, ToolTipText = "App, biometric helper and panel updates from GitHub" };
+        tools.Items.Add(_updates);
         tools.Items.Add(new ToolStripButton("Artisan", null, (_, _) => Tools.ArtisanConsole(this)) { DisplayStyle = ToolStripItemDisplayStyle.Text, ToolTipText = "Run php artisan commands" });
         tools.Items.Add(new ToolStripButton("Edit .env", null, (_, _) => Tools.EditEnv(this)) { DisplayStyle = ToolStripItemDisplayStyle.Text, ToolTipText = "Edit Laravel environment settings" });
         tools.Items.Add(new ToolStripSeparator());
@@ -73,6 +75,16 @@ public sealed class MainForm : Form
         _tick.Start();
 
         RefreshLanLabel();
+        RefreshUpdatesBadge(_app.Updates.Checker.Last);
+        _app.Updates.Checker.Checked += list => UiThread.Post(() => { if (!IsDisposed) RefreshUpdatesBadge(list); });
+    }
+
+    private void RefreshUpdatesBadge(IReadOnlyList<Runtime.Updates.UpdateInfo> list)
+    {
+        var n = list.Count(u => u.Available);
+        _updates.Text = n == 0 ? "Updates" : $"Updates ({n})";
+        _updates.ForeColor = n == 0 ? SystemColors.ControlText : Color.FromArgb(180, 40, 40);
+        _updates.Font = new Font(Font, n == 0 ? FontStyle.Regular : FontStyle.Bold);
     }
 
     private void RefreshLanLabel()

@@ -100,10 +100,10 @@ public static class Tools
         if (ok) PanelAppContext.OpenUrl(ctx.Paths.BackupsDir);
     }
 
-    public static void UpdateApp(IWin32Window owner)
+    public static void Updates(IWin32Window owner)
     {
-        var ctx = AppServices.Current;
-        using var dlg = new UpdateForm(ctx);
+        var app = PanelAppContext.Current ?? throw new InvalidOperationException("Updates need the running panel.");
+        using var dlg = new UpdatesForm(app.Ctx, app.Updates);
         dlg.ShowDialog(owner);
     }
 

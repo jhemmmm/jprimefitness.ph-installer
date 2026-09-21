@@ -26,6 +26,9 @@ public sealed class InstallEngine
 
     private AppPaths Paths => new(_s.InstallRoot);
 
+    /// <summary>Dev harness only: skip the pointer file / Run key / shortcut so a scratch install never hijacks the real one.</summary>
+    public bool SkipRegistration { get; init; }
+
     public async Task RunAsync(CancellationToken ct)
     {
         var paths = Paths;
@@ -43,7 +46,7 @@ public sealed class InstallEngine
         steps.Add(("Windows components and firewall (administrator)", AdminTasksAsync));
         steps.Add(("Writing configuration", WriteConfigsAsync));
         steps.Add(("Setting up the database", BootstrapAsync));
-        steps.Add(("Registering the panel", RegisterAsync));
+        if (!SkipRegistration) steps.Add(("Registering the panel", RegisterAsync));
 
         var total = steps.Count;
         for (var i = 0; i < total; i++)
